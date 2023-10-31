@@ -301,8 +301,20 @@ struct MiriRequest {
     edition: String,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+struct CircusRequest {
+    code: String,
+}
+
 #[derive(Debug, Clone, Serialize)]
 struct MiriResponse {
+    success: bool,
+    stdout: String,
+    stderr: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct CircusResponse {
     success: bool,
     stdout: String,
     stderr: String,
@@ -514,6 +526,26 @@ impl From<sandbox::MiriResponse> for MiriResponse {
         }
     }
 }
+    
+impl TryFrom<CircusRequest> for sandbox::CircusRequest {
+    type Error = Error;
+
+    fn try_from(me: CircusRequest) -> Result<Self> {
+        Ok(sandbox::CircusRequest {
+            code: me.code,
+        })
+    }
+}
+
+impl From<sandbox::CircusResponse> for CircusResponse {
+    fn from(me: sandbox::CircusResponse) -> Self {
+        CircusResponse {
+            success: me.success,
+            stdout: me.stdout,
+            stderr: me.stderr,
+        }
+    }
+}
 
 impl TryFrom<MacroExpansionRequest> for sandbox::MacroExpansionRequest {
     type Error = Error;
@@ -626,6 +658,7 @@ fn parse_target(s: &str) -> Result<sandbox::CompileTarget> {
         ),
         "llvm-ir" => sandbox::CompileTarget::LlvmIr,
         "mir" => sandbox::CompileTarget::Mir,
+        "circus" => sandbox::CompileTarget::Circus,
         "hir" => sandbox::CompileTarget::Hir,
         "wasm" => sandbox::CompileTarget::Wasm,
         value => InvalidTargetSnafu { value }.fail()?,

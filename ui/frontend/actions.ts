@@ -40,6 +40,7 @@ const routes = {
   format: { pathname: '/format' },
   clippy: { pathname: '/clippy' },
   miri: { pathname: '/miri' },
+  circus: { pathname: '/circus' },
   macroExpansion: { pathname: '/macro-expansion' },
   meta: {
     crates: { pathname: '/meta/crates' },
@@ -50,6 +51,7 @@ const routes = {
       rustfmt: '/meta/version/rustfmt',
       clippy: '/meta/version/clippy',
       miri: '/meta/version/miri',
+      circus: '/meta/version/circus',
     },
     gist: { pathname: '/meta/gist/' },
   },
@@ -95,6 +97,9 @@ export enum ActionType {
   CompileMirRequest = 'COMPILE_MIR_REQUEST',
   CompileMirSucceeded = 'COMPILE_MIR_SUCCEEDED',
   CompileMirFailed = 'COMPILE_MIR_FAILED',
+  CompileCircusRequest = 'COMPILE_CIRCUS_REQUEST',
+  CompileCircusSucceeded = 'COMPILE_CIRCUS_SUCCEEDED',
+  CompileCircusFailed = 'COMPILE_CIRCUS_FAILED',
   CompileWasmRequest = 'COMPILE_WASM_REQUEST',
   CompileWasmSucceeded = 'COMPILE_WASM_SUCCEEDED',
   CompileWasmFailed = 'COMPILE_WASM_FAILED',
@@ -111,8 +116,11 @@ export enum ActionType {
   ClippySucceeded = 'CLIPPY_SUCCEEDED',
   ClippyFailed = 'CLIPPY_FAILED',
   RequestMiri = 'REQUEST_MIRI',
+  RequestCircus = 'REQUEST_CIRCUS',
   MiriSucceeded = 'MIRI_SUCCEEDED',
+  CircusSucceeded = 'CIRCUS_SUCCEEDED',
   MiriFailed = 'MIRI_FAILED',
+  CircusFailed = 'CIRCUS_FAILED',
   RequestMacroExpansion = 'REQUEST_MACRO_EXPANSION',
   MacroExpansionSucceeded = 'MACRO_EXPANSION_SUCCEEDED',
   MacroExpansionFailed = 'MACRO_EXPANSION_FAILED',
@@ -449,6 +457,33 @@ const performCompileToNightlyHirOnly = (): ThunkAction => dispatch => {
   dispatch(performCompileToHirOnly());
 };
 
+const requestCompileCircus = () =>
+  <any>createAction(ActionType.CompileCircusRequest);
+
+// const receiveCompileCircusSuccess = ({ code, stdout, stderr }: CompileSuccess) => {
+//     console.log('here');
+//     console.log({ code, stdout, stderr });
+//     <any>createAction(ActionType.CompileCircusSucceeded, { code, stdout, stderr })
+// };
+
+
+const receiveCompileCircusSuccess = ({ code, stdout, stderr }: CompileSuccess) => {
+    // console.log('here');
+    // console.log({ code, stdout, stderr });
+    document.body.innerHTML = `<pre>${code}\n\n\n\n${stderr}\n\n\n\n${stdout}</pre>`;
+    return <any>createAction(ActionType.CompileCircusSucceeded, { code, stdout, stderr })
+};
+
+const receiveCompileCircusFailure = ({ error }: CompileFailure) =>
+  <any>createAction(ActionType.CompileCircusFailed, { error });
+
+const performCompileToCircusOnly = () =>
+  performCompileShow('circus', {
+    request: requestCompileCircus,
+    success: receiveCompileCircusSuccess,
+    failure: receiveCompileCircusFailure,
+  });
+
 const requestCompileMir = () =>
   createAction(ActionType.CompileMirRequest);
 
@@ -495,6 +530,7 @@ const PRIMARY_ACTIONS: { [index in PrimaryAction]: () => ThunkAction } = {
   [PrimaryActionCore.LlvmIr]: performCompileToLLVMOnly,
   [PrimaryActionCore.Hir]: performCompileToHirOnly,
   [PrimaryActionCore.Mir]: performCompileToMirOnly,
+  [PrimaryActionCore.Circus]: performCompileToCircusOnly,
   [PrimaryActionCore.Wasm]: performCompileToNightlyWasmOnly,
 };
 
@@ -545,6 +581,8 @@ export const performCompileToAssembly =
   performAndSwitchPrimaryAction(performCompileToAssemblyOnly, PrimaryActionCore.Asm);
 export const performCompileToLLVM =
   performAndSwitchPrimaryAction(performCompileToLLVMOnly, PrimaryActionCore.LlvmIr);
+export const performCompileToCircus =
+  performAndSwitchPrimaryAction(performCompileToCircusOnly, PrimaryActionCore.Circus);
 export const performCompileToMir =
   performAndSwitchPrimaryAction(performCompileToMirOnly, PrimaryActionCore.Mir);
 export const performCompileToNightlyHir =
@@ -689,6 +727,43 @@ export function performMiri(): ThunkAction {
   };
 }
 
+const requestCircus = () =>
+  createAction(ActionType.RequestCircus);
+
+interface CircusRequestBody {
+  code: string;
+}
+
+interface CircusResponseBody {
+  success: boolean;
+  stdout: string;
+  stderr: string;
+}
+
+type CircusSuccess = GeneralSuccess;
+
+const receiveCircusSuccess = ({ stdout, stderr }: CircusSuccess) =>
+  createAction(ActionType.CircusSucceeded, { stdout, stderr });
+
+const receiveCircusFailure = ({ error }: CompileFailure) =>
+  createAction(ActionType.CircusFailed, { error });
+
+export function performCircus(): ThunkAction {
+  // TODO: Check a cache
+  return function(dispatch, getState) {
+    dispatch(requestCircus());
+
+    const { code, configuration: {
+      edition,
+    } } = getState();
+    const body: CircusRequestBody = { code };
+
+    return jsonPost<CircusResponseBody>(routes.circus, body)
+      .then(json => dispatch(receiveCircusSuccess(json)))
+      .catch(json => dispatch(receiveCircusFailure(json)));
+  };
+}
+
 const requestMacroExpansion = () =>
   createAction(ActionType.RequestMacroExpansion);
 
@@ -818,11 +893,11 @@ const requestVersionsLoad = () =>
   createAction(ActionType.RequestVersionsLoad);
 
 const receiveVersionsLoadSuccess = ({
-  stable, beta, nightly, rustfmt, clippy, miri,
+  stable, beta, nightly, rustfmt, clippy, miri, circus
 }: {
-  stable: Version, beta: Version, nightly: Version, rustfmt: Version, clippy: Version, miri: Version,
+  stable: Version, beta: Version, nightly: Version, rustfmt: Version, clippy: Version, miri: Version, circus: Version,
 }) =>
-  createAction(ActionType.VersionsLoadSucceeded, { stable, beta, nightly, rustfmt, clippy, miri });
+    createAction(ActionType.VersionsLoadSucceeded, { stable, beta, nightly, rustfmt, clippy, miri, circus });
 
 export function performVersionsLoad(): ThunkAction {
   return function(dispatch) {
@@ -834,17 +909,19 @@ export function performVersionsLoad(): ThunkAction {
     const rustfmt = jsonGet(routes.meta.version.rustfmt);
     const clippy = jsonGet(routes.meta.version.clippy);
     const miri = jsonGet(routes.meta.version.miri);
+    const circus = jsonGet(routes.meta.version.circus);
 
-    const all = Promise.all([stable, beta, nightly, rustfmt, clippy, miri]);
+      const all = Promise.all([stable, beta, nightly, rustfmt, clippy, miri, circus]);
 
     return all
-      .then(([stable, beta, nightly, rustfmt, clippy, miri]) => dispatch(receiveVersionsLoadSuccess({
+        .then(([stable, beta, nightly, rustfmt, clippy, miri, circus]) => dispatch(receiveVersionsLoadSuccess({
         stable,
         beta,
         nightly,
         rustfmt,
         clippy,
         miri,
+            circus,
       })));
     // TODO: Failure case
   };
@@ -1001,8 +1078,11 @@ export type Action =
   | ReturnType<typeof receiveClippySuccess>
   | ReturnType<typeof receiveClippyFailure>
   | ReturnType<typeof requestMiri>
+  | ReturnType<typeof requestCircus>
   | ReturnType<typeof receiveMiriSuccess>
+  | ReturnType<typeof receiveCircusSuccess>
   | ReturnType<typeof receiveMiriFailure>
+  | ReturnType<typeof receiveCircusFailure>
   | ReturnType<typeof requestMacroExpansion>
   | ReturnType<typeof receiveMacroExpansionSuccess>
   | ReturnType<typeof receiveMacroExpansionFailure>

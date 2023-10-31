@@ -77,6 +77,7 @@ export enum PrimaryActionCore {
   LlvmIr = 'llvm-ir',
   Hir = 'hir',
   Mir = 'mir',
+  Circus = 'circus',
   Test = 'test',
   Wasm = 'wasm',
 }
@@ -108,6 +109,7 @@ export enum Backtrace {
 export enum Focus {
   Clippy = 'clippy',
   Miri = 'miri',
+  Circus = 'circus',
   MacroExpansion = 'macro-expansion',
   LlvmIr = 'llvm-ir',
   Mir = 'mir',

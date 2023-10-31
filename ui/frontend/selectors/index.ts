@@ -92,6 +92,7 @@ const LABELS: { [index in PrimaryActionCore]: string } = {
   [PrimaryActionCore.LlvmIr]: 'Show LLVM IR',
   [PrimaryActionCore.Hir]: 'Show HIR',
   [PrimaryActionCore.Mir]: 'Show MIR',
+  [PrimaryActionCore.Circus]: 'Run circus',
   [PrimaryActionCore.Test]: 'Test',
   [PrimaryActionCore.Wasm]: 'Show WASM',
 };
@@ -104,6 +105,7 @@ const getNightly = (state: State) => state.versions?.nightly;
 const getRustfmt = (state: State) => state.versions?.rustfmt;
 const getClippy = (state: State) => state.versions?.clippy;
 const getMiri = (state: State) => state.versions?.miri;
+const getCircus = (state: State) => state.versions?.circus;
 
 const versionNumber = (v: Version | undefined) => v ? v.version : '';
 export const stableVersionText = createSelector(getStable, versionNumber);
@@ -112,6 +114,7 @@ export const nightlyVersionText = createSelector(getNightly, versionNumber);
 export const clippyVersionText = createSelector(getClippy, versionNumber);
 export const rustfmtVersionText = createSelector(getRustfmt, versionNumber);
 export const miriVersionText = createSelector(getMiri, versionNumber);
+export const circusVersionText = createSelector(getCircus, versionNumber);
 
 const versionDetails = (v: Version | undefined) => v ? `${v.date} ${v.hash.slice(0, 20)}` : '';
 export const betaVersionDetailsText = createSelector(getBeta, versionDetails);
@@ -119,6 +122,7 @@ export const nightlyVersionDetailsText = createSelector(getNightly, versionDetai
 export const clippyVersionDetailsText = createSelector(getClippy, versionDetails);
 export const rustfmtVersionDetailsText = createSelector(getRustfmt, versionDetails);
 export const miriVersionDetailsText = createSelector(getMiri, versionDetails);
+export const circusVersionDetailsText = createSelector(getCircus, versionDetails);
 
 const editionSelector = (state: State) => state.configuration.edition;
 
@@ -166,6 +170,7 @@ const getOutputs = (state: State) => [
   state.output.mir,
   state.output.hir,
   state.output.miri,
+  state.output.circus,
   state.output.macroExpansion,
   state.output.wasm,
 ];

@@ -41,6 +41,7 @@ pub(crate) enum Endpoint {
     Execute,
     Format,
     Miri,
+    Circus,
     Clippy,
     MacroExpansion,
     MetaCrates,
@@ -50,6 +51,7 @@ pub(crate) enum Endpoint {
     MetaVersionRustfmt,
     MetaVersionClippy,
     MetaVersionMiri,
+    MetaVersionCircus,
     Evaluate,
 }
 
@@ -263,6 +265,25 @@ impl GenerateLabels for sandbox::MiriRequest {
     }
 }
 
+impl GenerateLabels for sandbox::CircusRequest {
+    fn generate_labels(&self, outcome: Outcome) -> Labels {
+        let Self { code: _ } = *self;
+
+        Labels {
+            endpoint: Endpoint::Miri,
+            outcome,
+
+            target: None,
+            channel: None,
+            mode: None,
+            edition: None,
+            crate_type: None,
+            tests: None,
+            backtrace: None,
+        }
+    }
+}
+
 impl GenerateLabels for sandbox::MacroExpansionRequest {
     fn generate_labels(&self, outcome: Outcome) -> Labels {
         let Self { code: _, edition } = *self;
@@ -343,6 +364,12 @@ impl SuccessDetails for sandbox::ClippyResponse {
 }
 
 impl SuccessDetails for sandbox::MiriResponse {
+    fn success_details(&self) -> Outcome {
+        common_success_details(self.success, &self.stderr)
+    }
+}
+
+impl SuccessDetails for sandbox::CircusResponse {
     fn success_details(&self) -> Outcome {
         common_success_details(self.success, &self.stderr)
     }

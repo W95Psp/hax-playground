@@ -162,10 +162,20 @@ fn build_execution_command(
 
     match (target, req.crate_type(), tests) {
         (Some(Wasm), _, _) => cmd.push("wasm"),
+        (Some(Circus), _, _) => {
+            cmd.push("circus");
+            cmd.push("-o");
+            cmd.push("/playground-result");
+            cmd.push("fstar");
+        },
         (Some(_), _, _) => cmd.push("rustc"),
         (_, _, true) => cmd.push("test"),
         (_, Library(_), _) => cmd.push("build"),
         (_, _, _) => cmd.push("run"),
+    }
+    
+    if let Some(Circus) = target {
+        return cmd;
     }
 
     if mode == Release {
@@ -202,6 +212,7 @@ fn build_execution_command(
             LlvmIr => cmd.push("--emit=llvm-ir"),
             Mir => cmd.push("--emit=mir"),
             Hir => cmd.push("-Zunpretty=hir"),
+            Circus => {},
             Wasm => { /* handled by cargo-wasm wrapper */ }
         }
     }
@@ -386,6 +397,19 @@ impl Sandbox {
         })
     }
 
+    pub async fn circus(&self, req: &CircusRequest) -> Result<CircusResponse> {
+        self.write_source_code(&req.code).await?;
+        let command = self.circus_command();
+
+        let output = run_command_with_timeout(command).await?;
+
+        Ok(CircusResponse {
+            success: output.status.success(),
+            stdout: vec_to_str(output.stdout)?,
+            stderr: vec_to_str(output.stderr)?,
+        })
+    }
+
     pub async fn macro_expansion(
         &self,
         req: &MacroExpansionRequest,
@@ -516,8 +540,12 @@ impl Sandbox {
 
         let execution_cmd = build_execution_command(Some(target), channel, mode, &req, tests);
 
-        cmd.arg(&channel.container_name()).args(&execution_cmd);
-
+        if let Circus = target {
+            cmd.arg("hacspec-v2").args(&execution_cmd);
+        } else {
+            cmd.arg(&channel.container_name()).args(&execution_cmd);
+        }
+            
         log::debug!("Compilation command is {:?}", cmd);
 
         cmd
@@ -576,6 +604,16 @@ impl Sandbox {
         cmd.arg("miri").args(&["cargo", "miri-playground"]);
 
         log::debug!("Miri command is {:?}", cmd);
+
+        cmd
+    }
+
+    fn circus_command(&self) -> Command {
+        let mut cmd = self.docker_command(None);
+
+        cmd.arg("circus").args(&["cargo", "circus", "-o", ".", "fstar"]);
+
+        log::debug!("Circus command is {:?}", cmd);
 
         cmd
     }
@@ -717,6 +755,7 @@ pub enum CompileTarget {
     Assembly(AssemblyFlavor, DemangleAssembly, ProcessAssembly),
     LlvmIr,
     Mir,
+    Circus,
     Hir,
     Wasm,
 }
@@ -728,6 +767,7 @@ impl CompileTarget {
             CompileTarget::LlvmIr => "ll",
             CompileTarget::Mir => "mir",
             CompileTarget::Hir => "hir",
+            CompileTarget::Circus => "fst",
             CompileTarget::Wasm => "wat",
         };
         OsStr::new(ext)
@@ -743,6 +783,7 @@ impl fmt::Display for CompileTarget {
             LlvmIr => "LLVM IR".fmt(f),
             Mir => "Rust MIR".fmt(f),
             Hir => "Rust HIR".fmt(f),
+            Circus => "Circus".fmt(f),
             Wasm => "WebAssembly".fmt(f),
         }
     }
@@ -1022,6 +1063,11 @@ pub struct MiriRequest {
     pub edition: Option<Edition>,
 }
 
+#[derive(Debug, Clone)]
+pub struct CircusRequest {
+    pub code: String,
+}
+
 impl EditionRequest for MiriRequest {
     fn edition(&self) -> Option<Edition> {
         self.edition
@@ -1030,6 +1076,13 @@ impl EditionRequest for MiriRequest {
 
 #[derive(Debug, Clone)]
 pub struct MiriResponse {
+    pub success: bool,
+    pub stdout: String,
+    pub stderr: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct CircusResponse {
     pub success: bool,
     pub stdout: String,
     pub stderr: String,

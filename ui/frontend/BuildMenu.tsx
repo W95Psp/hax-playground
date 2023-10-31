@@ -35,6 +35,7 @@ const BuildMenu: React.FC<BuildMenuProps> = props => {
   const compileToAssembly = useDispatchAndClose(actions.performCompileToAssembly, props.close);
   const compileToLLVM = useDispatchAndClose(actions.performCompileToLLVM, props.close);
   const compileToMir = useDispatchAndClose(actions.performCompileToMir, props.close);
+  const compileToCircus = useDispatchAndClose(actions.performCompileToCircus, props.close);
   const compileToHir = useDispatchAndClose(actions.performCompileToNightlyHir, props.close);
   const compileToWasm = useDispatchAndClose(actions.performCompileToNightlyWasm, props.close);
   const execute = useDispatchAndClose(actions.performExecute, props.close);
@@ -62,6 +63,9 @@ const BuildMenu: React.FC<BuildMenuProps> = props => {
       </ButtonMenuItem>
       <ButtonMenuItem name="MIR" onClick={compileToMir}>
         Build and show the resulting MIR, Rust’s control-flow-based intermediate representation.
+      </ButtonMenuItem>
+      <ButtonMenuItem name="CIRCUS" onClick={compileToCircus}>
+        run circus
       </ButtonMenuItem>
       <ButtonMenuItem name="HIR" onClick={compileToHir}>
         Build and show the resulting HIR, Rust’s syntax-based intermediate representation.

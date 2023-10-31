@@ -10,7 +10,7 @@ use crate::{
     ExecuteResponse, ExecutionSnafu, ExpansionSnafu, FormatRequest, FormatResponse,
     FormattingSnafu, GhToken, GistCreationSnafu, GistLoadingSnafu, InterpretingSnafu, LintingSnafu,
     MacroExpansionRequest, MacroExpansionResponse, MetaCratesResponse, MetaGistCreateRequest,
-    MetaGistResponse, MetaVersionResponse, MetricsToken, MiriRequest, MiriResponse, Result,
+    MetaGistResponse, MetaVersionResponse, MetricsToken, MiriRequest, MiriResponse, CircusRequest, CircusResponse, Result,
     SandboxCreationSnafu,
 };
 use async_trait::async_trait;
@@ -192,6 +192,16 @@ async fn clippy(Json(req): Json<ClippyRequest>) -> Result<Json<ClippyResponse>> 
         req,
         |sb, req| async move { sb.clippy(req).await }.boxed(),
         LintingSnafu,
+    )
+    .await
+    .map(Json)
+}
+
+async fn circus(Json(req): Json<CircusRequest>) -> Result<Json<CircusResponse>> {
+    with_sandbox(
+        req,
+        |sb, req| async move { sb.circus(req).await }.boxed(),
+        InterpretingSnafu,
     )
     .await
     .map(Json)

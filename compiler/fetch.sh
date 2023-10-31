@@ -9,3 +9,4 @@ for image in rust-stable rust-beta rust-nightly rustfmt clippy miri; do
     # The backend expects images without a repository prefix
     docker tag "${repository}/${image}" "${image}"
 done
+

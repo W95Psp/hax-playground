@@ -47,15 +47,16 @@ interface PaneWithCodeProps extends SimplePaneProps {
 
 const Output: React.FC = () => {
   const somethingToShow = useSelector(selectors.getSomethingToShow);
-  const { meta: { focus }, execute, format, clippy, miri, macroExpansion, assembly, llvmIr, mir, hir, wasm, gist } =
+  const { meta: { focus }, execute, format, clippy, miri, circus, macroExpansion, assembly, llvmIr, mir, hir, wasm, gist } =
     useSelector((state: State) => state.output);
-
+    
   const dispatch = useDispatch();
   const focusClose = useCallback(() => dispatch(actions.changeFocus()), [dispatch]);
   const focusExecute = useCallback(() => dispatch(actions.changeFocus(Focus.Execute)), [dispatch]);
   const focusFormat = useCallback(() => dispatch(actions.changeFocus(Focus.Format)), [dispatch]);
   const focusClippy = useCallback(() => dispatch(actions.changeFocus(Focus.Clippy)), [dispatch]);
   const focusMiri = useCallback(() => dispatch(actions.changeFocus(Focus.Miri)), [dispatch]);
+  const focusCircus = useCallback(() => dispatch(actions.changeFocus(Focus.Circus)), [dispatch]);
   const focusMacroExpansion = useCallback(() => dispatch(actions.changeFocus(Focus.MacroExpansion)), [dispatch]);
   const focusAssembly = useCallback(() => dispatch(actions.changeFocus(Focus.Asm)), [dispatch]);
   const focusLlvmIr = useCallback(() => dispatch(actions.changeFocus(Focus.LlvmIr)), [dispatch]);
@@ -68,6 +69,8 @@ const Output: React.FC = () => {
     return null;
   }
 
+    console.log({circus});
+    
   let close: React.ReactElement | null = null;
   let body: React.ReactElement | null = null;
   if (focus) {
@@ -79,6 +82,7 @@ const Output: React.FC = () => {
         {focus === Focus.Format && <SimplePane {...format} kind="format" />}
         {focus === Focus.Clippy && <SimplePane {...clippy} kind="clippy" />}
         {focus === Focus.Miri && <SimplePane {...miri} kind="miri" />}
+        {focus === Focus.Circus && <SimplePane {...circus} kind="circus" />}
         {focus === Focus.MacroExpansion && <SimplePane {...macroExpansion} kind="macro-expansion" />}
         {focus === Focus.Asm && <PaneWithCode {...assembly} kind="asm" />}
         {focus === Focus.LlvmIr && <PaneWithCode {...llvmIr} kind="llvm-ir" />}
@@ -109,6 +113,10 @@ const Output: React.FC = () => {
           label="Miri"
           onClick={focusMiri}
           tabProps={miri} />
+        <Tab kind={Focus.Circus} focus={focus}
+          label="Circus"
+          onClick={focusCircus}
+          tabProps={circus} />
         <Tab kind={Focus.MacroExpansion} focus={focus}
           label="Macro expansion"
           onClick={focusMacroExpansion}

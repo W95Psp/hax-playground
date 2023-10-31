@@ -11,6 +11,7 @@ import macroExpansion from './macroExpansion';
 import meta from './meta';
 import mir from './mir';
 import miri from './miri';
+import circus from './circus';
 import wasm from './wasm';
 
 const output = combineReducers({
@@ -18,6 +19,7 @@ const output = combineReducers({
   format,
   clippy,
   miri,
+  circus,
   macroExpansion,
   assembly,
   llvmIr,

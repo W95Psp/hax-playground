@@ -19,6 +19,9 @@ export default function meta(state = DEFAULT, action: Action) {
     case ActionType.RequestMiri:
       return { ...state, focus: Focus.Miri };
 
+    case ActionType.RequestCircus:
+      return { ...state, focus: Focus.Circus };
+
     case ActionType.RequestMacroExpansion:
       return { ...state, focus: Focus.MacroExpansion };
 

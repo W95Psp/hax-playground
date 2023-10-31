@@ -19,7 +19,9 @@ const ToolsMenu: React.FC<ToolsMenuProps> = props => {
   const clippyVersionDetails = useSelector(selectors.clippyVersionDetailsText);
   const clippyVersion = useSelector(selectors.clippyVersionText);
   const miriVersionDetails = useSelector(selectors.miriVersionDetailsText);
+  const circusVersionDetails = useSelector(selectors.circusVersionDetailsText);
   const miriVersion = useSelector(selectors.miriVersionText);
+  const circusVersion = useSelector(selectors.circusVersionText);
   const nightlyVersion = useSelector(selectors.nightlyVersionText);
   const nightlyVersionDetails = useSelector(selectors.nightlyVersionDetailsText);
 
@@ -30,6 +32,10 @@ const ToolsMenu: React.FC<ToolsMenuProps> = props => {
   }, [dispatch, props]);
   const miri = useCallback(() => {
     dispatch(actions.performMiri());
+    props.close();
+  }, [dispatch, props]);
+  const circus = useCallback(() => {
+    dispatch(actions.performCircus());
     props.close();
   }, [dispatch, props]);
   const format = useCallback(() => {
@@ -63,6 +69,14 @@ const ToolsMenu: React.FC<ToolsMenuProps> = props => {
           cases of undefined behavior (like out-of-bounds memory access).
         </div>
         <MenuAside>{miriVersion} ({miriVersionDetails})</MenuAside>
+      </ButtonMenuItem>
+      <ButtonMenuItem
+        name="Circus"
+        onClick={circus}>
+        <div>
+          Circus
+        </div>
+        <MenuAside>{circusVersion} ({circusVersionDetails})</MenuAside>
       </ButtonMenuItem>
       <ButtonMenuItem
         name="Expand macros"
